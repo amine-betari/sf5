@@ -22,6 +22,10 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Workflow\Registry;
 use Twig\Environment;
 
+
+/**
+ * @Route("/admin")
+ */
 class AdminController extends AbstractController
 {
     private $twig;
@@ -37,7 +41,27 @@ class AdminController extends AbstractController
     }
 
     /**
-     * @Route("/admin/comment/review/{id}", name="review_comment")
+     * @param KernelInterface $kernel
+     * @param Request $request
+     * @param string $uri
+     *
+     * @Route("/http-cache/{uri<.*>}", methods={"PURGE"})
+     * @return Response
+     */
+    public function purgeHttpCache(KernelInterface $kernel, Request $request, string $uri)
+    {
+        if ('prod' === $kernel->getEnvironment()) {
+            return new Response('KO', 400);
+        }
+
+        $store = (new class($kernel) extends HttpCache {})->getStore();
+        $store->purge($request->getSchemeAndHttpHost().'/'.$uri);
+
+        return new Response('Done');
+
+    }
+    /**
+     * @Route("/comment/review/{id}", name="review_comment")
      */
     public function reviewComment(Request $request, Comment $comment, Registry $registry)
     {
