@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Comment;
 use App\Form\CommentFormType;
+use App\Message\CommentMessage;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\Routing\Annotation\Route;
@@ -14,18 +15,19 @@ use Doctrine\ORM\EntityManagerInterface;
 use App\Repository\CommentRepository;
 use Twig\Environment;
 use App\Entity\Conference;
-use App\SpamChecker;
-
+use Symfony\Component\Messenger\MessageBusInterface;
 
 class ConferenceController extends AbstractController
 {
     private $twig;
     private $entityManager;
+    private $bus;
 
-    public function __construct(Environment $twig, EntityManagerInterface $entityManager)
+    public function __construct(Environment $twig, EntityManagerInterface $entityManager, MessageBusInterface $bus)
     {
         $this->twig = $twig;
         $this->entityManager = $entityManager;
+        $this->bus  = $bus;
     }
 
     /**
@@ -45,7 +47,6 @@ class ConferenceController extends AbstractController
     public function show(Request $request, Conference $conference,
                          CommentRepository $commentRepository,
                          ConferenceRepository $conferenceRepository,
-                         SpamChecker $spamChecker,
                          string $photoDir)
     {
         $comment = new Comment();
@@ -67,6 +68,7 @@ class ConferenceController extends AbstractController
             }
 
             $this->entityManager->persist($comment);
+            $this->entityManager->flush();
             // Gestion des spams
             $context = [
                 'user_ip' => $request->getClientIp(),
@@ -74,12 +76,9 @@ class ConferenceController extends AbstractController
                 'referrer' => $request->headers->get('referer'),
                 'permalink' => $request->getUri(),
             ];
-            if (2 === $spamChecker->getSpamScore($comment, $context)) {
-                throw new \RuntimeException('Blatant spam, go away!');
-            }
-            // Gestion des spams
 
-            $this->entityManager->flush();
+            // Bus Messenger
+            $this->bus->dispatch(new CommentMessage($comment->getId(), $context));
 
             return $this->redirectToRoute('conference', ['slug' => $conference->getSlug()]);
         }

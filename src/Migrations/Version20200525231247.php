@@ -24,7 +24,7 @@ final class Version20200525231247 extends AbstractMigration
 
        // $this->addSql('ALTER TABLE comment ALTER state SET NOT NULL');
         $this->addSql('ALTER TABLE comment DROP state');
-        
+
         $this->addSql('ALTER TABLE comment ADD state VARCHAR(255)');
         $this->addSql("UPDATE comment SET state='published'");
         $this->addSql('ALTER TABLE comment ALTER COLUMN state SET NOT NULL');
