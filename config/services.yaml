@@ -4,7 +4,8 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices/configuration.html#application-related-configuration
 parameters:
-    default_admin_email: amine.betari@gmail.com
+#   default_admin_email: amine.betari@gmail.com
+    default_admin_email: commercial@bas-consulting.fr
     default_domain: '127.0.0.1'
     default_scheme: 'http'
 
